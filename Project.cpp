@@ -1,168 +1,148 @@
 #include <iostream>
+#include <string>
+#include <iomanip>
+
 using namespace std;
 
 class Account {
+private:
+    string accountNumber;
+    string accountHolder;
+    string password;
+    double balance;
+
 public:
-    string accountnumber;
-    string name;
-    string password ;
-    double initialDeposit;
-    double cBalance;
+    Account(const string& accNumber, const string& accHolder, const string& pwd, double initialBalance)
+        : accountNumber(accNumber), accountHolder(accHolder), password(pwd), balance(initialBalance) {}
 
-    Account() {
-        accountnumber = "-------------";
-        name = "Unknown";
-        password = "0000";
-        cBalance = 0;
+    string getAccountNumber() const {
+        return accountNumber;
     }
 
-    void setInfo(string n, string p,string q,double r) {
-        accountnumber = n;
-        name = p;
-        password = q;
-        initialDeposit = r;
+    string getAccountHolder() const {
+        return accountHolder;
     }
 
-    void getInfo() {
-        cout << "account Information:" << endl;
-        cout << "Name: " << name << endl;
-        cout<< "Account Number: "<<accountnumber<<endl;
-        cout << "Password: XXXXXXXX" << endl;
-        cout << "Current Balance: " << cBalance << endl;
+    double getBalance() const {
+        return balance;
     }
-     void initialdpst(Account &user)
-    {    
-        double initialDeposit;
-        cout<<"Enter money to deposit:"<<endl;
-        cin>>initialDeposit;
-        if(initialDeposit > 0){
-        user.cBalance += initialDeposit;
-        }
-        else{
-            cout<<"invalid input"<<endl;
-        }
+
+    bool authenticate(const string& pwd) const {
+        return pwd == password;
     }
-  
-};
 
-//#include "User.h"
-
-class ATMOperations {
-public:
-    void deposit(Account &user) {
-        double amount;
-        cout << "Enter money you want to deposit: " << endl;
-        cin >> amount;
+    void deposit(double amount) {
         if (amount > 0) {
-            user.cBalance += amount;
-            cout << "Amount of " << amount << " deposited successfully" << endl;
+            balance += amount;
+            cout << "Deposit successful. New balance: $" << fixed << setprecision(2) << balance << endl;
         } else {
-            cout << "Invalid amount" << endl;
+            cout << "Invalid deposit amount." << endl;
         }
     }
 
-    void withdraw(Account &user) {
-        double wBalance;
-        cout << "Your current balance is " << user.cBalance << endl;
-        cout << "Enter money you want to withdraw: " << endl;
-        cin >> wBalance;
-        if (wBalance <= user.cBalance) {
-            user.cBalance -= wBalance;
-            cout << "Money withdrawal successful." << endl;
+    void withdraw(double amount) {
+        if (amount > 0 && amount <= balance) {
+            balance -= amount;
+            cout << "Withdrawal successful. New balance: $" << fixed << setprecision(2) << balance << endl;
         } else {
-            cout << "Insufficient balance in your account." << endl;
+            cout << "Invalid withdrawal amount or insufficient funds." << endl;
         }
     }
-   
+
+    void displayBalance() const {
+        cout << "Account balance: $" << fixed << setprecision(2) << balance << endl;
+    }
 };
-// security class
-class SecurityAuthentication {
+//ATM class
+#include <iostream>
+#include <unordered_map>
+#include <memory>
+
+using namespace std;
+
+class ATM {
+private:
+    unordered_map<string, shared_ptr<Account>> accounts;
+
 public:
-    bool authenticate(Account &user, string inputPsd) {
-        return user.password == inputPsd;
-    }
-};
-
-
-class BankingTransactions {
-public:
-    void deposit(Account &user) {
-        ATMOperations atm;
-        atm.deposit(user);
+    void addAccount(const shared_ptr<Account>& account) {
+        accounts[account->getAccountNumber()] = account;
     }
 
-    void withdraw(Account &user, SecurityAuthentication &security) {
-        ATMOperations atm;
-        string  Password;
-        cout << "Enter your password: ";
-        cin >> Password;
-        if (security.authenticate(user, Password)) {
-            atm.withdraw(user);
+    shared_ptr<Account> accessAccount(const string& accountNumber, const string& password) {
+        auto it = accounts.find(accountNumber);
+        if (it != accounts.end() && it->second->authenticate(password)) {
+            return it->second;
         } else {
-            cout << "Wrong password .try again." << endl;
+            cout << "Invalid account number or password." << endl;
+            return nullptr;
         }
     }
-};
 
+    void displayMenu() const {
+        cout << "ATM Menu:\n";
+        cout << "1. Deposit\n";
+        cout << "2. Withdraw\n";
+        cout << "3. Check Balance\n";
+        cout << "4. Exit\n";
+    }
+};
+//Main function
+#include <iostream>
+#include <memory>
+
+using namespace std;
 
 int main() {
-    Account user;
-    BankingTransactions transactions;
-    SecurityAuthentication security;
+    ATM atm;
 
-    string accountnumber;
-    string name;
-    string password ;
-    double initialDeposit;
-    int choice1,choice2;
+    // Create a few accounts
+    auto acc1 = make_shared<Account>("123456", "Aarti", "1234", 1000.0);
+    auto acc2 = make_shared<Account>("654321", "sachin", "2009", 2000.0);
 
-    do{
-        cout << "Welcome to National Smart Bank (NSB).\n" << endl << "To open your account, Kindly provide your correct credentials:" << endl;
-        cout << "\nSelect an option to proceed: " << endl;
-        cout<<"1. verify your details\n2. Exit\n"<<endl;
-        cin>>choice1;
+    // Add accounts to the ATM
+    atm.addAccount(acc1);
+    atm.addAccount(acc2);
 
-        switch (choice1){
-            case 1:
-              cout << "Enter your account number: " << endl;
-              cin >> accountnumber;
-              cout << "Enter your name: " << endl;
-              cin >> name;
-              cout<< "Confirm your password to proceed:"<<endl;
-              cin>>password;
-              user.initialdpst(user);
-              user.setInfo(accountnumber,name, password,initialDeposit);  
-              break;
-            case 2:
-             cout<<"Account verification completed;"<<"   "<<"you are eligible for ATM services."<<endl;
+    // ATM simulation
+    string accNumber;
+    string password;
+    cout << "Enter account number: ";
+    cin >> accNumber;
+    cout << "Enter password: ";
+    cin >> password;
 
-        }
-           
+    auto account = atm.accessAccount(accNumber, password);
+    if (account) {
+        int choice;
+        do {
+            atm.displayMenu();
+            cout << "Enter choice: ";
+            cin >> choice;
 
-    } while(choice1 !=2);
-
-    do {
-        cout << "\nSelect an option to proceed: " << endl;
-        cout << "1. Deposit money\n2. Withdraw money\n3. Print passbook\n4. Exit" << endl;
-        cin >> choice2;
-
-        switch (choice2) {
-            case 1:
-                transactions.deposit(user);
-                break;
-            case 2:
-                transactions.withdraw(user,security);
-                break;
-            case 3:
-                user.getInfo();
-                break;
-            case 4:
-                cout << "Exiting ATM. have a nice day" << endl;
-                break;
-            default:
-                cout << "Invalid option. Please enter a number from 1 to 4." << endl;
-        }
-    } while (choice2 != 4);
+            double amount;
+            switch (choice) {
+                case 1:
+                    cout << "Enter amount to deposit: ";
+                    cin >> amount;
+                    account->deposit(amount);
+                    break;
+                case 2:
+                    cout << "Enter amount to withdraw: ";
+                    cin >> amount;
+                    account->withdraw(amount);
+                    break;
+                case 3:
+                    account->displayBalance();
+                    break;
+                case 4:
+                    cout << "Exiting ATM. Goodbye!" << endl;
+                    break;
+                default:
+                    cout << "Invalid choice. Try again." << endl;
+            }
+        } while (choice != 4);
+    }
 
     return 0;
 }
