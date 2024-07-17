@@ -4,12 +4,33 @@
 
 using namespace std;
 
+class Transaction {
+private:
+    string type;
+    double amount;
+    string date;
+    
+public:
+    Transaction(const string& type, double amount, const string& date) : type(type), amount(amount), date(date) {}
+    
+    void displayTransaction() const {
+        cout << left << setw(10) << type << right << setw(10) << fixed << setprecision(2) << amount << " " << date << endl;
+    }
+};
+#include <iostream>
+#include <string>
+#include <vector>
+#include <iomanip>
+
+using namespace std;
+
 class Account {
 private:
     string accountNumber;
     string accountHolder;
     string password;
     double balance;
+    vector<Transaction> transactions;
 
 public:
     Account(const string& accNumber, const string& accHolder, const string& pwd, double initialBalance)
@@ -31,18 +52,20 @@ public:
         return pwd == password;
     }
 
-    void deposit(double amount) {
+    void deposit(double amount, const string& date) {
         if (amount > 0) {
             balance += amount;
+            transactions.emplace_back("Deposit", amount, date);
             cout << "Deposit successful. New balance: $" << fixed << setprecision(2) << balance << endl;
         } else {
             cout << "Invalid deposit amount." << endl;
         }
     }
 
-    void withdraw(double amount) {
+    void withdraw(double amount, const string& date) {
         if (amount > 0 && amount <= balance) {
             balance -= amount;
+            transactions.emplace_back("Withdrawal", amount, date);
             cout << "Withdrawal successful. New balance: $" << fixed << setprecision(2) << balance << endl;
         } else {
             cout << "Invalid withdrawal amount or insufficient funds." << endl;
@@ -52,8 +75,21 @@ public:
     void displayBalance() const {
         cout << "Account balance: $" << fixed << setprecision(2) << balance << endl;
     }
+
+    void displayDetails() const {
+        cout << "Account Number: " << accountNumber << "\n";
+        cout << "Account Holder: " << accountHolder << "\n";
+        cout << "Balance: $" << fixed << setprecision(2) << balance << "\n";
+    }
+    
+    void displayTransactions() const {
+        cout << "Transaction History:\n";
+        cout << left << setw(10) << "Type" << right << setw(10) << "Amount" << " Date\n";
+        for (const auto& transaction : transactions) {
+            transaction.displayTransaction();
+        }
+    }
 };
-//ATM class
 #include <iostream>
 #include <unordered_map>
 #include <memory>
@@ -84,10 +120,10 @@ public:
         cout << "1. Deposit\n";
         cout << "2. Withdraw\n";
         cout << "3. Check Balance\n";
-        cout << "4. Exit\n";
+        cout << "4. Display Transactions\n";
+        cout << "5. Exit\n";
     }
 };
-//Main function
 #include <iostream>
 #include <memory>
 
@@ -98,7 +134,7 @@ int main() {
 
     // Create a few accounts
     auto acc1 = make_shared<Account>("123456", "Aarti", "1234", 1000.0);
-    auto acc2 = make_shared<Account>("654321", "sachin", "2009", 2000.0);
+    auto acc2 = make_shared<Account>("654321", "Sachin", "2009", 2000.0);
 
     // Add accounts to the ATM
     atm.addAccount(acc1);
@@ -121,27 +157,35 @@ int main() {
             cin >> choice;
 
             double amount;
+            string date;
             switch (choice) {
                 case 1:
                     cout << "Enter amount to deposit: ";
                     cin >> amount;
-                    account->deposit(amount);
+                    cout << "Enter date (YYYY-MM-DD): ";
+                    cin >> date;
+                    account->deposit(amount, date);
                     break;
                 case 2:
                     cout << "Enter amount to withdraw: ";
                     cin >> amount;
-                    account->withdraw(amount);
+                    cout << "Enter date (YYYY-MM-DD): ";
+                    cin >> date;
+                    account->withdraw(amount, date);
                     break;
                 case 3:
                     account->displayBalance();
                     break;
                 case 4:
+                    account->displayTransactions();
+                    break;
+                case 5:
                     cout << "Exiting ATM. Goodbye!" << endl;
                     break;
                 default:
                     cout << "Invalid choice. Try again." << endl;
             }
-        } while (choice != 4);
+        } while (choice != 5);
     }
 
     return 0;
