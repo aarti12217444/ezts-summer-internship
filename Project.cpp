@@ -1,7 +1,6 @@
 #include <iostream>
+#include <vector>
 #include <string>
-#include <iomanip>
-
 using namespace std;
 
 class Transaction {
@@ -9,20 +8,15 @@ private:
     string type;
     double amount;
     string date;
-    
+
 public:
     Transaction(const string& type, double amount, const string& date) : type(type), amount(amount), date(date) {}
-    
+
     void displayTransaction() const {
-        cout << left << setw(10) << type << right << setw(10) << fixed << setprecision(2) << amount << " " << date << endl;
+        cout << "Type: " << type << ", Amount: $" << amount << ", Date: " << date << endl;
     }
 };
-#include <iostream>
-#include <string>
-#include <vector>
-#include <iomanip>
 
-using namespace std;
 
 class Account {
 private:
@@ -56,7 +50,7 @@ public:
         if (amount > 0) {
             balance += amount;
             transactions.emplace_back("Deposit", amount, date);
-            cout << "Deposit successful. New balance: $" << fixed << setprecision(2) << balance << endl;
+            cout << "Deposit successful. New balance: $" << balance << endl;
         } else {
             cout << "Invalid deposit amount." << endl;
         }
@@ -66,53 +60,47 @@ public:
         if (amount > 0 && amount <= balance) {
             balance -= amount;
             transactions.emplace_back("Withdrawal", amount, date);
-            cout << "Withdrawal successful. New balance: $" << fixed << setprecision(2) << balance << endl;
+            cout << "Withdrawal successful. New balance: $" << balance << endl;
         } else {
             cout << "Invalid withdrawal amount or insufficient funds." << endl;
         }
     }
 
     void displayBalance() const {
-        cout << "Account balance: $" << fixed << setprecision(2) << balance << endl;
+        cout << "Account balance: $" << balance << endl;
     }
 
     void displayDetails() const {
         cout << "Account Number: " << accountNumber << "\n";
         cout << "Account Holder: " << accountHolder << "\n";
-        cout << "Balance: $" << fixed << setprecision(2) << balance << "\n";
+        cout << "Balance: $" << balance << "\n";
     }
-    
+
     void displayTransactions() const {
         cout << "Transaction History:\n";
-        cout << left << setw(10) << "Type" << right << setw(10) << "Amount" << " Date\n";
         for (const auto& transaction : transactions) {
             transaction.displayTransaction();
         }
     }
 };
-#include <iostream>
-#include <unordered_map>
-#include <memory>
-
-using namespace std;
 
 class ATM {
 private:
-    unordered_map<string, shared_ptr<Account>> accounts;
+    vector<Account> accounts;
 
 public:
-    void addAccount(const shared_ptr<Account>& account) {
-        accounts[account->getAccountNumber()] = account;
+    void addAccount(const Account& account) {
+        accounts.push_back(account);
     }
 
-    shared_ptr<Account> accessAccount(const string& accountNumber, const string& password) {
-        auto it = accounts.find(accountNumber);
-        if (it != accounts.end() && it->second->authenticate(password)) {
-            return it->second;
-        } else {
-            cout << "Invalid account number or password." << endl;
-            return nullptr;
+    Account* accessAccount(const string& accountNumber, const string& password) {
+        for (auto& account : accounts) {
+            if (account.getAccountNumber() == accountNumber && account.authenticate(password)) {
+                return &account;
+            }
         }
+        cout << "Invalid account number or password." << endl;
+        return nullptr;
     }
 
     void displayMenu() const {
@@ -125,7 +113,6 @@ public:
     }
 };
 #include <iostream>
-#include <memory>
 
 using namespace std;
 
@@ -133,8 +120,8 @@ int main() {
     ATM atm;
 
     // Create a few accounts
-    auto acc1 = make_shared<Account>("123456", "Aarti", "1234", 1000.0);
-    auto acc2 = make_shared<Account>("654321", "Sachin", "2009", 2000.0);
+    Account acc1("123456", "Aarti", "1234", 1000.0);
+    Account acc2("654321", "Sachin", "2009", 2000.0);
 
     // Add accounts to the ATM
     atm.addAccount(acc1);
@@ -148,7 +135,7 @@ int main() {
     cout << "Enter password: ";
     cin >> password;
 
-    auto account = atm.accessAccount(accNumber, password);
+    Account* account = atm.accessAccount(accNumber, password);
     if (account) {
         int choice;
         do {
